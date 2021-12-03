@@ -1,0 +1,3 @@
+[submodule "EARS"]
+	path = EARS
+	url = https://github.com/UM-LPM/EARS
