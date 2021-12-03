@@ -1,0 +1,3 @@
+rootProject.name = 'coyote'
+include ":EARS"
+project(":EARS").projectDir = new File("./EARS")
