@@ -50,7 +50,8 @@ public class Coyote extends Algorithm {
             throw new StopCriterionException("Number of Coyotes per pack should be at least 3");
         }
 
-        int d = 10;
+        double d = 10;
+        double ps = 1/d;
         Vector<Vector<Integer>> lu = new Vector<>();
         Vector<Integer> lower = new Vector<>();
         Vector<Integer> upper = new Vector<>();
@@ -106,7 +107,7 @@ public class Coyote extends Algorithm {
         // Main loop
         var year = 1;
         while (nfEval < 20000) {
-            year += 1;
+            year++;
             // For each pack
             for (int i = 0; i < numberOfPacks; i++) {
                 // Coyotes aux
@@ -152,11 +153,11 @@ public class Coyote extends Algorithm {
                     var tmpVector = new Vector<Double>();
                     var firstRandom = Util.nextDouble(0, 1);
                     var secondRandom = Util.nextDouble(0, 1);
-                    for (int k = 0; k < newCoyotesAux.size(); k++) {
+                    for (int k = 0; k < newCoyotesAux.get(0).size(); k++) {
                         tmpVector.add(newCoyotesAux.get(c).get(k) + firstRandom * cAlpha.get(k) - newCoyotesAux.get(rc1).get(k) + secondRandom * (tendency.get(k) - newCoyotesAux.get(rc2).get(k)));
                     }
                     // Limit the coyotes
-                    limita(tmpVector, d, varMin, varMax);
+                    tmpVector = limita(tmpVector, (int)d, varMin, varMax);
                     newCoyotes.add(tmpVector);
 
                     // Evaluate new social condition
@@ -170,6 +171,60 @@ public class Coyote extends Algorithm {
                     }
                 }
                 // Birth of new coyotes from random parents
+                var parentsPermutation = new Vector<Integer>();
+                for (int p = 0; p < numberOfCoyotes; p++) {
+                    parentsPermutation.add(p);
+                }
+                Collections.shuffle(parentsPermutation);
+                var parents = new Vector<Integer>();
+                parents.add(parentsPermutation.get(0));
+                parents.add(parentsPermutation.get(1));
+                var prob1 = (1-ps)/2;
+                var prob2 = prob1;
+                var p1 = new Vector<Boolean>();
+                var p2 = new Vector<Boolean>();
+                var pdr = new Vector<Integer>();
+                for (int p = 0; p < d; p++) {
+                    pdr.add(p);
+                    p1.add(false);
+                    p2.add(false);
+                }
+                Collections.shuffle(pdr);
+                p1.setElementAt(true, pdr.get(0));
+                p2.setElementAt(true, pdr.get(1));
+                var r = new Vector<Double>();
+                for (int j = 0; j < d-2; j++) {
+                    r.add(Util.nextDouble(0, 1));
+                }
+                for (int j = 2; j < d; j++) {
+                    if (r.get(j-2) < prob1) {
+                        p1.setElementAt(true, pdr.get(j));
+                    } else {
+                        p1.setElementAt(false, pdr.get(j));
+                    }
+                    if (r.get(j-2) > 1-prob2) {
+                        p2.setElementAt(true, pdr.get(j));
+                    } else {
+                        p2.setElementAt(false, pdr.get(j));
+                    }
+                }
+                // Eventual noise
+                var n = new Vector<Boolean>();
+                for (int j = 0; j < p1.size(); j++) {
+                    var or = p1.get(j) || p2.get(j);
+                    n.add(!or);
+                }
+                // Generate the pup
+                var pup = new Vector<Double>();
+                var random1 = Util.nextDouble(0, 1);
+                for (int j = 0; j < p1.size(); j++) {
+                    var element = (p1.get(j) ? 1 : 0) * newCoyotesAux.get(parents.get(0)).get(j) +
+                            (p2.get(j) ? 1 : 0) * newCoyotesAux.get(parents.get(1)).get(j) +
+                            (n.get(j) ? 1 : 0) * (varMin.get(j) +
+                                    Util.nextDouble(0, 1) * (varMax.get(j) - varMin.get(j)));
+                    pup.add(element);
+                }
+                // TODO: Check if the pup will survive
             }
         }
 
@@ -221,10 +276,12 @@ public class Coyote extends Algorithm {
         return medians;
     }
 
-    private void limita(Vector<Double> tmpVector, int d, Vector<Integer> varMin, Vector<Integer> varMax) {
+    private Vector<Double> limita(Vector<Double> tmpVector, int d, Vector<Integer> varMin, Vector<Integer> varMax) {
+        var limited = new Vector<Double>();
         for (int i = 0; i < d; i++) {
-            tmpVector.setElementAt(Math.max(Math.min(tmpVector.get(i), varMax.get(i)), varMin.get(i)), i);
+            limited.add(Math.max(Math.min(tmpVector.get(i), varMax.get(i)), varMin.get(i)));
         }
+        return limited;
     }
 
     private void initPopulation() throws StopCriterionException {
