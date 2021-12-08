@@ -6,11 +6,14 @@ import org.um.feri.ears.problems.StopCriterionException;
 import org.um.feri.ears.problems.Task;
 import org.um.feri.ears.util.Comparator.TaskComparator;
 import org.um.feri.ears.util.annotation.AlgorithmParameter;
+import org.um.feri.ears.util.report.Pair;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Vector;
+
+import org.um.feri.ears.util.Util;
 
 public class Coyote extends Algorithm {
     @AlgorithmParameter(name = "Number of packs")
@@ -48,9 +51,9 @@ public class Coyote extends Algorithm {
         }
 
         int d = 10;
-        Vector<Vector<Integer>> lu = new Vector<Vector<Integer>>();
-        Vector<Integer> lower=new Vector<Integer>();
-        Vector<Integer> upper=new Vector<Integer>();
+        Vector<Vector<Integer>> lu = new Vector<>();
+        Vector<Integer> lower = new Vector<>();
+        Vector<Integer> upper = new Vector<>();
         for(int j = 0; j < d; j++){
             lower.add(-10);
             upper.add(10);
@@ -60,7 +63,7 @@ public class Coyote extends Algorithm {
 
         var varMin = lower;
         var varMax = upper;
-
+        // Packs init
         var coyotes = new Vector<Vector<Double>>();
         for (int i = 0; i < popSize; i++) {
             var r = new Vector<Double>();
@@ -75,14 +78,99 @@ public class Coyote extends Algorithm {
             permutation.add(i);
         }
         Collections.shuffle(permutation);
+        var ages = new Vector<Integer>();
+        var costs = new Vector<Double>();
         var packs = new Vector<Vector<Integer>>();
         var pack = new Vector<Integer>();
-        for (int i = 0; i < permutation.size(); i++) {
-            if (i % numberOfCoyotes == 0) {
+        for (Integer integer : permutation) {
+            pack.add(integer);
+            ages.add(0);
+            if (pack.size() % numberOfCoyotes == 0) {
                 packs.add(pack);
-                pack = new Vector<Integer>();
+                pack = new Vector<>();
             }
-            pack.add(permutation.get(i));
+        }
+
+        // Evaluating coyotes adaptation
+        for (int i = 0; i < popSize; i++) {
+            costs.add(sphere(coyotes.get(i)));
+        }
+
+        var nfEval = popSize;
+
+        // Output vars
+        var min = Collections.min(costs);
+        var minIndex = costs.indexOf(min);
+        var globalParams = coyotes.get(minIndex);
+
+        // Main loop
+        var year = 1;
+        while (nfEval < 20000) {
+            year += 1;
+            // For each pack
+            for (int i = 0; i < numberOfPacks; i++) {
+                // Coyotes aux
+                var coyotesAux = new Vector<Vector<Double>>();
+                var newCoyotesAux = new Vector<Vector<Double>>();
+                var costsAux = new Vector<Pair<Integer, Double>>();
+                var agesAux = new Vector<Integer>();
+                var newAgesAux = new Vector<Integer>();
+                var tmpPacks = packs.get(i);
+                for (int j = 0; j < tmpPacks.size(); j++) {
+                    var tmpPack = tmpPacks.get(j);
+                    coyotesAux.add(coyotes.get(tmpPack));
+                    costsAux.add(new Pair<>(j, costs.get(tmpPack)));
+                    agesAux.add(ages.get(tmpPack));
+                }
+                costsAux.sort(new Comparator<Pair<Integer, Double>>() {
+                    @Override
+                    public int compare(Pair<Integer, Double> o1, Pair<Integer, Double> o2) {
+                        return o1.getB().compareTo(o2.getB());
+                    }
+                });
+                for (var cost: costsAux) {
+                    var index = cost.getA();
+                    newCoyotesAux.add(coyotesAux.get(index));
+                    newAgesAux.add(agesAux.get(index));
+                }
+                var cAlpha = newCoyotesAux.get(0);
+                // Calculate social tendency
+                var tendency = tendency(newCoyotesAux);
+                // Update coyotes social condition
+                var newCoyotes = new Vector<Vector<Double>>();
+                for (int c = 0; c < numberOfCoyotes; c++) {
+                    var rc1 = c;
+                    while (rc1 == c) {
+                        rc1 = Util.nextInt(numberOfCoyotes);
+                    }
+                    var rc2 = c;
+                    while (rc2 == c || rc2 == rc1) {
+                        rc2 = Util.nextInt(numberOfCoyotes);
+                    }
+
+                    // Try to update the social condition according to alpha and tendency
+                    var tmpVector = new Vector<Double>();
+                    var firstRandom = Util.nextDouble(0, 1);
+                    var secondRandom = Util.nextDouble(0, 1);
+                    for (int k = 0; k < newCoyotesAux.size(); k++) {
+                        tmpVector.add(newCoyotesAux.get(c).get(k) + firstRandom * cAlpha.get(k) - newCoyotesAux.get(rc1).get(k) + secondRandom * (tendency.get(k) - newCoyotesAux.get(rc2).get(k)));
+                    }
+                    // Limit the coyotes
+                    limita(tmpVector, d, varMin, varMax);
+                    newCoyotes.add(tmpVector);
+
+                    // Evaluate new social condition
+                    var newCost = sphere(tmpVector);
+                    nfEval++;
+
+                    // Adaptation
+                    if (newCost < costsAux.get(c).getB()) {
+                        costsAux.setElementAt(new Pair<>(costsAux.get(c).getA(), newCost), c);
+                        newCoyotesAux.setElementAt(newCoyotes.get(c), c);
+                    }
+                }
+                // Birth of new coyotes from random parents
+            }
         }
 
         // the task object holds information about the stopping criterion
@@ -90,7 +178,7 @@ public class Coyote extends Algorithm {
         DoubleSolution newSolution;
         best = task.getRandomEvaluatedSolution();  // generate new random solution (number of evaluations is incremented automatically)
         // to evaluate a custom solution or an array use task.eval(mySolution)
-        int year = 1;
+
         while (!task.isStopCriterion()) { // run until the stopping criterion is not reached
             year++;
             // Execute for each pack
@@ -104,6 +192,39 @@ public class Coyote extends Algorithm {
             task.incrementNumberOfIterations(); // increase the number of generations for each iteration of the main loop
         }
         return best; // return the best solution found
+    }
+
+    private double sphere(Vector<Double> coyotes) {
+        double sum = 0;
+        for (var coyote: coyotes) {
+            sum += Math.pow(coyote, 2);
+        }
+        return sum;
+    }
+
+    private Vector<Double> tendency(Vector<Vector<Double>> aux) {
+        var medians = new Vector<Double>();
+        for (int i = 0; i < aux.get(0).size(); i++) {
+            var tmp = new Vector<Double>();
+            for(int j = 0; j < aux.size(); j++) {
+                tmp.add(aux.get(j).get(i));
+            }
+            Collections.sort(tmp);
+            double median;
+            if (tmp.size() % 2 == 0)
+                median = (tmp.get(tmp.size() / 2) + tmp.get(tmp.size() / 2 - 1))/2;
+            else
+                median = tmp.get(tmp.size() / 2);
+            medians.add(median);
+        }
+
+        return medians;
+    }
+
+    private void limita(Vector<Double> tmpVector, int d, Vector<Integer> varMin, Vector<Integer> varMax) {
+        for (int i = 0; i < d; i++) {
+            tmpVector.setElementAt(Math.max(Math.min(tmpVector.get(i), varMax.get(i)), varMin.get(i)), i);
+        }
     }
 
     private void initPopulation() throws StopCriterionException {
