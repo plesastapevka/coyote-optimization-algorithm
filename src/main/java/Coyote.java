@@ -136,10 +136,11 @@ public class Coyote extends Algorithm {
                     coyoteValues = limita(coyoteValues, task.getNumberOfDimensions(), lower, upper);
 
                     // Eval new social condition
-                    newSolution = task.eval(coyoteValues);
                     if (task.isStopCriterion()) {
                         break;
                     }
+                    newSolution = task.eval(coyoteValues);
+
                     newCoyotes.add(newSolution);
                     var newCost = newSolution.getEval();
 
@@ -194,10 +195,11 @@ public class Coyote extends Algorithm {
                                     Util.nextDouble(0, 1) * (upper.get(j) - lower.get(j)));
                 }
                 // Check if the pup will survive
-                var pupCost = task.eval(pup);
                 if (task.isStopCriterion()) {
                     break;
                 }
+                var pupCost = task.eval(pup);
+
                 var worst = new ArrayList<Integer>();
                 for (int j = 0; j < costsAux.size(); j++) {
                     if (costsAux.get(j).getB() > pupCost.getEval()) {
