@@ -6,6 +6,7 @@ import org.um.feri.ears.algorithms.so.jade.JADE;
 import org.um.feri.ears.algorithms.so.random.RandomWalkAlgorithm;
 import org.um.feri.ears.algorithms.so.tlbo.TLBOAlgorithm;
 import org.um.feri.ears.benchmark.Benchmark;
+import org.um.feri.ears.benchmark.CEC2015Benchmark;
 import org.um.feri.ears.benchmark.RPUOed30Benchmark;
 import org.um.feri.ears.util.Util;
 
@@ -19,16 +20,19 @@ public class COABenchmark {
         ArrayList<Algorithm> algorithms = new ArrayList<Algorithm>();
         algorithms.add(new Coyote());
 //        algorithms.add(new CRO());
-//        algorithms.add(new ABC());
+        algorithms.add(new ABC());
 //        algorithms.add(new GWO());
 //        algorithms.add(new TLBOAlgorithm());
 //        algorithms.add(new RandomWalkAlgorithm());
-        algorithms.add(new JADE());
+//        algorithms.add(new JADE());
 
-        RPUOed30Benchmark rpuoed30 = new RPUOed30Benchmark(); // benchmark with prepared tasks and settings
+//        RPUOed30Benchmark rpuoed30 = new RPUOed30Benchmark(); // benchmark with prepared tasks and settings
+        CEC2015Benchmark cec = new CEC2015Benchmark();
 
-        rpuoed30.addAlgorithms(algorithms);  // register the algorithms in the benchmark
+//        rpuoed30.addAlgorithms(algorithms);  // register the algorithms in the benchmark
+        cec.addAlgorithms(algorithms);
 
-        rpuoed30.run(10); //start the tournament with 10 runs/repetitions
+        cec.run(3);
+//        rpuoed30.run(10); //start the tournament with 10 runs/repetitions
     }
 }

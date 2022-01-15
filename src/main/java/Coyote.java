@@ -7,6 +7,7 @@ import org.um.feri.ears.problems.Task;
 import org.um.feri.ears.util.annotation.AlgorithmParameter;
 import org.um.feri.ears.util.report.Pair;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -55,19 +56,19 @@ public class Coyote extends Algorithm {
         }
 
         // Packs init
-        var coyotes = new ArrayList<DoubleSolution>();
+        ArrayList<DoubleSolution> coyotes = new ArrayList<>();
         for (int i = 0; i < popSize; i++) {
             coyotes.add(task.getRandomEvaluatedSolution());
         }
-        var permutation = new ArrayList<Integer>();
+        ArrayList<Integer> permutation = new ArrayList<Integer>();
         for (int i = 0; i < popSize; i++) {
             permutation.add(i);
         }
         Collections.shuffle(permutation);
-        var ages = new ArrayList<Integer>();
-        var costs = new ArrayList<Double>();
-        var packs = new ArrayList<ArrayList<Integer>>();
-        var pack = new ArrayList<Integer>();
+        ArrayList<Integer> ages = new ArrayList<Integer>();
+        ArrayList<Double> costs = new ArrayList<Double>();
+        ArrayList<ArrayList<Integer>> packs = new ArrayList<ArrayList<Integer>>();
+        ArrayList<Integer> pack = new ArrayList<Integer>();
         for (Integer integer : permutation) {
             pack.add(integer);
             ages.add(0);
@@ -90,43 +91,43 @@ public class Coyote extends Algorithm {
             // For each pack
             for (int p = 0; p < numberOfPacks; p++) {
                 // Coyotes aux
-                var coyotesAux = new ArrayList<DoubleSolution>();
-                var newCoyotesAux = new ArrayList<DoubleSolution>();
-                var costsAux = new ArrayList<Pair<Integer, Double>>();
-                var agesAux = new ArrayList<Integer>();
-                var newAgesAux = new ArrayList<Integer>();
-                var tmpPacks = packs.get(p);
+                ArrayList<DoubleSolution> coyotesAux = new ArrayList<DoubleSolution>();
+                ArrayList<DoubleSolution> newCoyotesAux = new ArrayList<DoubleSolution>();
+                ArrayList<Pair<Integer, Double>> costsAux = new ArrayList<Pair<Integer, Double>>();
+                ArrayList<Integer> agesAux = new ArrayList<Integer>();
+                ArrayList<Integer> newAgesAux = new ArrayList<Integer>();
+                ArrayList<Integer> tmpPacks = packs.get(p);
                 for (int j = 0; j < tmpPacks.size(); j++) {
-                    var tmpPack = tmpPacks.get(j);
+                    Integer tmpPack = tmpPacks.get(j);
                     coyotesAux.add(coyotes.get(tmpPack));
                     costsAux.add(new Pair<>(j, costs.get(tmpPack)));
                     agesAux.add(ages.get(tmpPack));
                 }
                 costsAux.sort(Comparator.comparing(Pair::getB));
-                for (var cost : costsAux) {
-                    var index = cost.getA();
+                for (Pair<Integer, Double> cost : costsAux) {
+                    Integer index = cost.getA();
                     newCoyotesAux.add(coyotesAux.get(index));
                     newAgesAux.add(agesAux.get(index));
                 }
                 // Update coyotes social condition
-                var newCoyotes = new ArrayList<DoubleSolution>();
-                var cAlpha = newCoyotesAux.get(0);
+                ArrayList<DoubleSolution> newCoyotes = new ArrayList<DoubleSolution>();
+                DoubleSolution cAlpha = newCoyotesAux.get(0);
                 // Calculate social tendency
-                var tendency = tendency(newCoyotesAux);
+                ArrayList<Double> tendency = tendency(newCoyotesAux);
                 for (int c = 0; c < numberOfCoyotes; c++) {
-                    var rc1 = c;
+                    int rc1 = c;
                     while (rc1 == c) {
                         rc1 = Util.nextInt(numberOfCoyotes);
                     }
-                    var rc2 = c;
+                    int rc2 = c;
                     while (rc2 == c || rc2 == rc1) {
                         rc2 = Util.nextInt(numberOfCoyotes);
                     }
 
                     // Try to update the social condition according to alpha and tendency
-                    var coyoteValues = new double[newCoyotesAux.get(c).getDoubleVariables().length];
-                    var firstRandom = Util.nextDouble(0, 1);
-                    var secondRandom = Util.nextDouble(0, 1);
+                    double[] coyoteValues = new double[newCoyotesAux.get(c).getDoubleVariables().length];
+                    double firstRandom = Util.nextDouble(0, 1);
+                    double secondRandom = Util.nextDouble(0, 1);
                     for (int k = 0; k < newCoyotesAux.get(0).getDoubleVariables().length; k++) {
                         coyoteValues[k] = newCoyotesAux.get(c).getDoubleVariables()[k] +
                                 firstRandom * cAlpha.getDoubleVariables()[k] - newCoyotesAux.get(rc1).getDoubleVariables()[k] +
@@ -142,7 +143,7 @@ public class Coyote extends Algorithm {
                     newSolution = task.eval(coyoteValues);
 
                     newCoyotes.add(newSolution);
-                    var newCost = newSolution.getEval();
+                    double newCost = newSolution.getEval();
 
                     // Adaptation
                     if (task.isFirstBetter(newCost, costsAux.get(c).getB())) {
@@ -151,11 +152,11 @@ public class Coyote extends Algorithm {
                     }
                 }
                 // Birth of new coyotes from random parents
-                var parents = randomPermutation(numberOfCoyotes);
-                var prob = (1 - ps) / 2;
-                var p1 = new ArrayList<Boolean>();
-                var p2 = new ArrayList<Boolean>();
-                var pdr = new ArrayList<Integer>();
+                ArrayList<Integer> parents = randomPermutation(numberOfCoyotes);
+                double prob = (1 - ps) / 2;
+                ArrayList<Boolean> p1 = new ArrayList<Boolean>();
+                ArrayList<Boolean> p2 = new ArrayList<Boolean>();
+                ArrayList<Integer> pdr = new ArrayList<Integer>();
                 for (int i = 0; i < task.getNumberOfDimensions(); i++) {
                     pdr.add(i);
                     p1.add(false);
@@ -164,7 +165,7 @@ public class Coyote extends Algorithm {
                 Collections.shuffle(pdr);
                 p1.set(pdr.get(0), true);
                 p2.set(pdr.get(1), true);
-                var r = new ArrayList<Double>();
+                ArrayList<Double> r = new ArrayList<Double>();
                 for (int j = 0; j < task.getNumberOfDimensions() - 2; j++) {
                     r.add(Util.nextDouble(0, 1));
                 }
@@ -181,13 +182,13 @@ public class Coyote extends Algorithm {
                     }
                 }
                 // Eventual noise
-                var n = new ArrayList<Boolean>();
+                ArrayList<Boolean> n = new ArrayList<Boolean>();
                 for (int j = 0; j < p1.size(); j++) {
-                    var or = p1.get(j) || p2.get(j);
+                    Boolean or = p1.get(j) || p2.get(j);
                     n.add(!or);
                 }
                 // Generate the pup
-                var pup = new double[p1.size()];
+                double[] pup = new double[p1.size()];
                 for (int j = 0; j < p1.size(); j++) {
                     pup[j] = (p1.get(j) ? 1 : 0) * newCoyotesAux.get(parents.get(0)).getDoubleVariables()[j] +
                             (p2.get(j) ? 1 : 0) * newCoyotesAux.get(parents.get(1)).getDoubleVariables()[j] +
@@ -198,22 +199,22 @@ public class Coyote extends Algorithm {
                 if (task.isStopCriterion()) {
                     break;
                 }
-                var pupCost = task.eval(pup);
+                DoubleSolution pupCost = task.eval(pup);
 
-                var worst = new ArrayList<Integer>();
+                ArrayList<Integer> worst = new ArrayList<Integer>();
                 for (int j = 0; j < costsAux.size(); j++) {
                     if (costsAux.get(j).getB() > pupCost.getEval()) {
                         worst.add(j);
                     }
                 }
                 if (worst.size() > 0) {
-                    var older = new ArrayList<Pair<Integer, Integer>>();
+                    ArrayList<Pair<Integer, Integer>> older = new ArrayList<Pair<Integer, Integer>>();
                     for (int j = 0; j < worst.size(); j++) {
                         older.add(new Pair<>(j, newAgesAux.get(j)));
                     }
                     older.sort(Comparator.comparing(Pair::getB));
                     Collections.reverse(older);
-                    var which = new ArrayList<Integer>();
+                    ArrayList<Integer> which = new ArrayList<Integer>();
                     for (Pair<Integer, Integer> integerIntegerPair : older) {
                         which.add(worst.get(integerIntegerPair.getA()));
                     }
@@ -223,7 +224,7 @@ public class Coyote extends Algorithm {
                 }
                 // Update the pack info
                 for (int j = 0; j < packs.get(p).size(); j++) {
-                    var packIndex = packs.get(p).get(j);
+                    Integer packIndex = packs.get(p).get(j);
                     coyotes.set(packIndex, newCoyotesAux.get(j));
                     costs.set(packIndex, costsAux.get(j).getB());
                     ages.set(packIndex, newAgesAux.get(j));
@@ -232,11 +233,11 @@ public class Coyote extends Algorithm {
             // Coyote leaving a pack
             if (numberOfPacks > 1) {
                 if (Util.nextDouble(0, 1) < leavingProbability) {
-                    var rp = randomPermutation(numberOfPacks);
-                    var rc = new Pair<>(Util.nextInt(numberOfCoyotes), Util.nextInt(numberOfCoyotes));
+                    ArrayList<Integer> rp = randomPermutation(numberOfPacks);
+                    Pair<Integer, Integer> rc = new Pair<>(Util.nextInt(numberOfCoyotes), Util.nextInt(numberOfCoyotes));
                     // Coyote leaves the pack and joins a random one
-                    var aux = packs.get(rp.get(0)).get(rc.getA());
-                    var tmp = packs.get(rp.get(1)).get(rc.getB());
+                    Integer aux = packs.get(rp.get(0)).get(rc.getA());
+                    Integer tmp = packs.get(rp.get(1)).get(rc.getB());
                     packs.get(rp.get(0)).set(rc.getA(), tmp);
                     packs.get(rp.get(1)).set(rc.getB(), aux);
                 }
@@ -247,8 +248,8 @@ public class Coyote extends Algorithm {
             }
 
             // Output vars
-            var globalMin = Collections.min(costs);
-            var ibest = costs.indexOf(globalMin);
+            Double globalMin = Collections.min(costs);
+            int ibest = costs.indexOf(globalMin);
             best = coyotes.get(ibest);
             task.incrementNumberOfIterations();
         }
@@ -256,21 +257,21 @@ public class Coyote extends Algorithm {
     }
 
     private ArrayList<Integer> randomPermutation(int num) {
-        var permutation = new ArrayList<Integer>();
+        ArrayList<Integer> permutation = new ArrayList<Integer>();
         for (int i = 0; i < num; i++) {
             permutation.add(i);
         }
         Collections.shuffle(permutation);
-        var parents = new ArrayList<Integer>();
+        ArrayList<Integer> parents = new ArrayList<Integer>();
         parents.add(permutation.get(0));
         parents.add(permutation.get(1));
         return parents;
     }
 
     private ArrayList<Double> tendency(ArrayList<DoubleSolution> pack) {
-        var medians = new ArrayList<Double>();
+        ArrayList<Double> medians = new ArrayList<Double>();
         for (int i = 0; i < pack.get(0).getDoubleVariables().length; i++) {
-            var tmp = new ArrayList<Double>();
+            ArrayList<Double> tmp = new ArrayList<Double>();
             for (DoubleSolution doubleSolution : pack) {
                 tmp.add(doubleSolution.getDoubleVariables()[i]);
             }
@@ -287,7 +288,7 @@ public class Coyote extends Algorithm {
     }
 
     private double[] limita(double[] coyotes, int d, ArrayList<Integer> varMin, ArrayList<Integer> varMax) {
-        var limited = new double[coyotes.length];
+        double[] limited = new double[coyotes.length];
         for (int i = 0; i < d; i++) {
             limited[i] = Math.max(Math.min(coyotes[i], varMax.get(i)), varMin.get(i));
         }
