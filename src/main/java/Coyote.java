@@ -7,7 +7,6 @@ import org.um.feri.ears.problems.Task;
 import org.um.feri.ears.util.annotation.AlgorithmParameter;
 import org.um.feri.ears.util.report.Pair;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -48,11 +47,11 @@ public class Coyote extends Algorithm {
         }
 
         double ps = 1 / (double)task.getNumberOfDimensions();
-        ArrayList<Integer> lower = new ArrayList<>();
-        ArrayList<Integer> upper = new ArrayList<>();
+        ArrayList<Double> lower = new ArrayList<>();
+        ArrayList<Double> upper = new ArrayList<>();
         for(int j = 0; j < task.getNumberOfDimensions(); j++){
-            lower.add(-10);
-            upper.add(10);
+            lower.add(task.getLowerLimit()[j]);
+            upper.add(task.getUpperLimit()[j]);
         }
 
         // Packs init
@@ -126,15 +125,16 @@ public class Coyote extends Algorithm {
 
                     // Try to update the social condition according to alpha and tendency
                     double[] coyoteValues = new double[newCoyotesAux.get(c).getDoubleVariables().length];
-                    double firstRandom = Util.nextDouble(0, 1);
-                    double secondRandom = Util.nextDouble(0, 1);
+                    double firstRandom = Util.nextDouble();
+                    double secondRandom = Util.nextDouble();
                     for (int k = 0; k < newCoyotesAux.get(0).getDoubleVariables().length; k++) {
                         coyoteValues[k] = newCoyotesAux.get(c).getDoubleVariables()[k] +
                                 firstRandom * cAlpha.getDoubleVariables()[k] - newCoyotesAux.get(rc1).getDoubleVariables()[k] +
                                 secondRandom * (tendency.get(k) - newCoyotesAux.get(rc2).getDoubleVariables()[k]);
                     }
                     // Limit the coyotes
-                    coyoteValues = limita(coyoteValues, task.getNumberOfDimensions(), lower, upper);
+                    coyoteValues = task.setFeasible(coyoteValues);
+//                    coyoteValues = limita(coyoteValues, task.getNumberOfDimensions(), lower, upper);
 
                     // Eval new social condition
                     if (task.isStopCriterion()) {
@@ -287,7 +287,7 @@ public class Coyote extends Algorithm {
         return medians;
     }
 
-    private double[] limita(double[] coyotes, int d, ArrayList<Integer> varMin, ArrayList<Integer> varMax) {
+    private double[] limita(double[] coyotes, int d, ArrayList<Double> varMin, ArrayList<Double> varMax) {
         double[] limited = new double[coyotes.length];
         for (int i = 0; i < d; i++) {
             limited[i] = Math.max(Math.min(coyotes[i], varMax.get(i)), varMin.get(i));
